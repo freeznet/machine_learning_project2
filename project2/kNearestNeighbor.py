@@ -1,6 +1,6 @@
 __author__ = 'Rui'
 
-import sys
+import sys, operator
 from PrincipalComponentAnalysis import *
 if sys.platform == 'win32':
     default_timer = time.clock
@@ -84,21 +84,25 @@ def getRandomData(xdata, ydata, train_size):
 
 if __name__ == "__main__":
     dataset = Dataset()
+    results = {}
     krange = [x for x in range(1,11)] # 1 .. 10
     for one in dataset.database:
-        kset = [] # store cross-validation result to choose best K
+        kset = {} # store cross-validation result to choose best K
+        result = {}
         print 'Current dataset:',one
         initRuntime = default_timer()
 
         currentTime = default_timer()
         data = dataset.load(one,0)
         print '     Load Testing data done. (%0.3fs)'%(default_timer() - currentTime)
+        result['t_load_test'] = default_timer() - currentTime
         XTrain = data.features
         YTrain = data.labels
 
         currentTime = default_timer()
         data = dataset.load(one,1)
         print '     Load Training data done. (%0.3fs)'%(default_timer() - currentTime)
+        result['t_load_train'] = default_timer() - currentTime
         XTest = data.features
         YTest = data.labels
 
@@ -110,14 +114,17 @@ if __name__ == "__main__":
         print '     Start training ...'
         currentTime = default_timer()
         for k in krange:
-            randomTrainX, randomTrainY, randomTestX, randomTestY = getRandomData(XTest, YTest, 0.8)
-            trainPredict = knn.predict(randomTestX, randomTrainX, randomTrainY, k)
-            trainResult = knn.analysis(trainPredict, randomTestY)
-            kset.append(trainResult)
-            if trainResult == 100.00:  # 100% then break(best K already)
+            for i in range(0,10):   # preform 10 times cross-validation
+                randomTrainX, randomTrainY, randomTestX, randomTestY = getRandomData(XTrain, YTrain, 0.8)
+                trainPredict = knn.predict(randomTestX, randomTrainX, randomTrainY, k) # predict for test data with training data model
+                trainResult = knn.analysis(trainPredict, randomTestY)
+                kset[k] = kset.get(k, 0.0) + trainResult
+            kset[k] = kset.get(k, 0.0) / 10.0 # -> get even value
+            if kset.get(k, 0.0) >= 100.0:   # reach maximum, no need anymore testing
                 break
-        selectK = krange[kset.index(max(kset))]
-        print '     Get best k: %d with accuracy %f. (%0.3fs)'%(selectK, max(kset), default_timer() - currentTime)
+        selectK = max(kset.iteritems(), key=operator.itemgetter(1))[0]
+        print '     Get best k: %d with accuracy %f. (%0.3fs)'%(selectK, kset[selectK], default_timer() - currentTime)
+        result['select_k'] = selectK
 
         currentTime = default_timer()
         testPredict = knn.predict(XTest, XTrain, YTrain, selectK)
@@ -128,12 +135,15 @@ if __name__ == "__main__":
         print '     %d-NN done. (%0.3fs)'%(selectK, default_timer() - currentTime)
         print '     [*] Accuracy on training set: %g' % p_train
         print '     [*] Accuracy on test set: %g' % p_test
+        result['p_train'] = p_train
+        result['p_test'] = p_test
 
         ### PCA
         currentTime = default_timer()
         print '     Estimating best parameter for PCA...'
         pca = PCA(XTrain) # using training data set
         bestPCA = pca.dim
+        result['select_dim'] = bestPCA
         print '     Dim reduce from %d to %d.(%0.3fs)'%(XTrain.shape[1], bestPCA, default_timer() - currentTime)
         XDimReducedTrain = pca.currentFeature
         XDimReducedTest = pca.DimReduce(XTest, bestPCA)
@@ -144,12 +154,22 @@ if __name__ == "__main__":
 
         p_train = knn.training_reconstruction(TrainPCAPredict)
         p_test = knn.test_predictions(testPCAPredict)
+        result['p_pca_train'] = p_train
+        result['p_pca_test'] = p_test
         print '     %d-NN with PCA (dim reduce to %d) done. (%0.3fs)'%(selectK, bestPCA, default_timer() - currentTime)
         print '     [*] Accuracy on training set: %g' % p_train
         print '     [*] Accuracy on test set: %g' % p_test
-
+        result['t_overall'] = default_timer() - initRuntime
         print '     Total runtime: %0.3fs'%(default_timer() - initRuntime)
         print
+        results[one] = result
+
+    print 'Dumping result data...'
+    f = file('kNearestNeighbor.sav', 'wb')
+    parameters = (results)
+    cPickle.dump(parameters, f, protocol=cPickle.HIGHEST_PROTOCOL)
+    f.close()
+    print 'done.'
 
 
 

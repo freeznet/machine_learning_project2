@@ -1,9 +1,13 @@
+from numpy.numarray import reshape
+from numpy import c_
+
 __author__ = 'Rui'
 
 #from scipy.optimize import fmin_bfgs, fmin_cg, fmin_ncg, fmin_l_bfgs_b, fmin
-import time
-
+import time, cPickle, sys
+import numpy as np
 from scipy import optimize as op
+
 
 if sys.platform == 'win32':
     default_timer = time.clock
@@ -13,7 +17,6 @@ else:
 np.seterr(all='ignore')
 
 from dataloader import *
-from pylab import *
 
 def sigmoid(X):
     den = 1.0 + np.exp(-1.0 * X)
@@ -66,20 +69,24 @@ class LogisticReg:
 
 if __name__ == "__main__":
     dataset = Dataset()
+    results = {}
 
     for one in dataset.database:
         print 'Current dataset:',one
+        result = {}
         initRuntime = default_timer()
 
         currentTime = default_timer()
         data = dataset.load(one,0)
         print '     Load Testing data done. (%0.3fs)'%(default_timer() - currentTime)
+        result['t_load_test'] = default_timer() - currentTime
         XTrain = data.features
         YTrain = data.labels
 
         currentTime = default_timer()
         data = dataset.load(one,1)
         print '     Load Training data done. (%0.3fs)'%(default_timer() - currentTime)
+        result['t_load_train'] = default_timer() - currentTime
         XTest = data.features
         YTest = data.labels
 
@@ -89,15 +96,27 @@ if __name__ == "__main__":
         Jinit = lr.costFunction(lr.theta)
 
         theta = lr.minimum_auto()
-        print '     Data training done. (%0.3fs)'%(default_timer() - currentTime)
 
         p_train = lr.training_reconstruction(theta)
         p_test = lr.test_predictions(theta)
+        result['t_preform_train'] = default_timer() - currentTime
+        print '     Data training done. (%0.3fs)'%(default_timer() - currentTime)
 
         print '     Accuracy on training set: %g' % p_train
         print '     Accuracy on test set: %g' % p_test
+        result['p_train'] = p_train
+        result['p_test'] = p_test
+        result['t_overall'] = default_timer() - initRuntime
         print '     Total runtime: %0.3fs'%(default_timer() - initRuntime)
         print
+        results[one] = result
+
+    print 'Dumping result data...'
+    f = file('LogisticRegression.sav', 'wb')
+    parameters = (results)
+    cPickle.dump(parameters, f, protocol=cPickle.HIGHEST_PROTOCOL)
+    f.close()
+    print 'done.'
 
 
 
