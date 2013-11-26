@@ -1,6 +1,7 @@
 __author__ = 'Rui'
 
-from scipy.optimize import fmin_bfgs, fmin_cg, fmin_ncg, fmin_l_bfgs_b
+#from scipy.optimize import fmin_bfgs, fmin_cg, fmin_ncg, fmin_l_bfgs_b, fmin
+from scipy import optimize as op
 import numpy as np
 
 from dataloader import *
@@ -14,74 +15,49 @@ def sigmoid(X):
 class LogisticReg:
     def __init__(self, xTrain, yTrain, xTest, yTest):
         self.set_data(xTrain, yTrain, xTest, yTest)
-        self.betas = np.zeros(self.x_train.shape[1])
-        print type(xTrain), type(self.betas)
+        self.theta = np.zeros(self.x_train.shape[1])
+        self.J = None
+        self.grad = None
 
-    def negative_lik(self, betas):
-        return -1 * self.lik(betas)
+    def costFunction(self, theta):
+        theta = reshape(theta, (len(theta),1))
+        self.J = (1.0 / self.n) * (-self.y_train.T.dot(log(sigmoid(self.x_train.dot(theta)))) - (1.0 - self.y_train).T.dot(log(1.0 - sigmoid(self.x_train.dot(theta)))))
+        self.grad = ((1.0 / self.n) * (sigmoid(self.x_train.dot(theta)).T - self.y_train).T.dot(self.x_train)).T
+        return self.J[0][0]
 
-    def lik(self, betas):
-        """ Likelihood of the data under the current settings of parameters. """
-        l = 0
-        for i in range(self.n):
-            l += log(sigmoid(self.y_train[i] * np.dot(betas, self.x_train[i,:])))
-            #l += self.y_train[i] * log(sigmoid(np.dot(betas, self.x_train[i,:]))) + (1.0 - self.y_train[i]) * log(1.0 - sigmoid(np.dot(betas, self.x_train[i,:])))
-        return l
+    def predict(self, X, theta):
+        return (sigmoid(X.dot(c_[theta]))>=0.5)
 
-    def train(self):
-        dB_k = lambda B, k : - np.sum([ \
-            self.y_train[i] * self.x_train[i, k] * \
-            sigmoid(-self.y_train[i] *\
-            np.dot( B, self.x_train[i,:])) \
-            for i in range(self.n)])
+    def minimum(self):
+        options = {'full_output':True, 'maxiter':500}
+        theta, cost, _, _, _, =  op.fmin(lambda t: self.costFunction(t), self.theta, **options)
+        return theta
 
-        dB = lambda B : np.array([dB_k(B, k) \
-            for k in range(self.x_train.shape[1])])
-
-        self.betas = fmin_bfgs(self.negative_lik, self.betas, fprime=dB)
+    def minimum_(self):
+        theta =  op.fmin_bfgs(self.costFunction, self.theta)
+        return theta
 
     def set_data(self, x_train, y_train, x_test, y_test):
-        self.x_train = x_train
+        self.x_train = c_[np.ones(x_train.shape[0]), x_train] # add intercept terms
         self.y_train = y_train
-        self.x_test = x_test
+        self.x_test = c_[np.ones(x_test.shape[0]), x_test]
         self.y_test = y_test
-        self.n = y_train.shape[0]
-        self.testn = y_test.shape[0]
+        self.n = y_train.shape[0] # num of samples / training
+        self.testn = y_test.shape[0] # num of samples / testing
 
-    def training_reconstruction(self):
-        p_y1 = np.zeros(self.n)
-        for i in range(self.n):
-            p_y1[i] = sigmoid(np.dot(self.betas, self.x_train[i,:])) >= 0.5
-        return p_y1
+    def training_reconstruction(self, theta):
+        p = self.predict(self.x_train, theta)
+        return (p == self.y_train).mean()*100.0
 
-    def test_predictions(self):
-        p_y1 = np.zeros(self.testn)
-        for i in range(self.testn):
-            p_y1[i] = sigmoid(np.dot(self.betas, self.x_test[i,:])) >= 0.5
-        return p_y1
-
-    def plot_training_reconstruction(self):
-        plot(np.arange(self.n), self.y_train, 'bo')
-        plot(np.arange(self.n), self.training_reconstruction(), 'rx')
-        ylim([-.1, 1.1])
-
-    def plot_test_predictions(self):
-        plot(np.arange(self.testn), self.y_test, 'yo')
-        plot(np.arange(self.testn), self.test_predictions(), 'rx')
-        ylim([-.1, 1.1])
-
-    def winningrate(self):
-        training_ret = self.training_reconstruction()
-        test_ret = self.test_predictions()
-        print (training_ret==self.y_train).mean() * 100.0
-        print (test_ret==self.y_test).mean() * 100.0
-
-
+    def test_predictions(self, theta):
+        p = self.predict(self.x_test, theta)
+        return (p == self.y_test).mean()*100.0
 
 if __name__ == "__main__":
     dataset = Dataset()
 
     for one in dataset.database:
+        print one
         data = dataset.load(one,0)
         XTrain = data.features
         YTrain = data.labels
@@ -92,10 +68,24 @@ if __name__ == "__main__":
 
         lr = LogisticReg(xTrain=XTrain, yTrain=YTrain, xTest=XTest, yTest=YTest)
 
-        lr.train()
+        Jinit = lr.costFunction(lr.theta)
 
-        print one
-        lr.winningrate()
+        theta = lr.minimum_()
+        #print '\nCost at theta found by fmin: %g' % cost
+        #print '\nParameters theta:', theta
+
+        p_train = lr.training_reconstruction(theta)
+        p_test = lr.test_predictions(theta)
+
+        print '\nAccuracy on training set: %g' % p_train
+        print 'Accuracy on test set: %g' % p_test
+
+        #print theta
+
+
+
+        #lr.winningrate()
+        #break
 
 
 
