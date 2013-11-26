@@ -1,0 +1,48 @@
+I. NEEDED TOOLS:
+    a. Python 2.7 (3.* is not supported yet)
+    b. numpy http://www.scipy.org/install.html | matrix related, kind a Matlab mapping for Python
+    c. scipy http://www.scipy.org/install.html | needed by numpy
+
+    P.S: You can just download the latest IPython package, it contain all needed things. Check http://ipython.org/install.html
+
+II. HOW TO RUN:
+    There are two executable python scripts, which are kNearestNeighbor.py and LogisticRegression.py
+
+    1. Before run
+        a. setup the needed tools
+        b. start a terminal (or cmd in windows), make sure you are in the code folder [project2]. If you are using IPython, just open an IPython console, direct to the code folder.
+        c. (OPTIONAL) put NEEDED database file into the [datasets] folder. If you dont do this step, program will download needed database automatically.
+
+    2. Execute
+        a. for k-NN:
+        -----------------------------------------
+        python kNearestNeighbor.py
+        -----------------------------------------
+
+        OR if you are using IPython console:
+        -----------------------------------------
+        run kNearestNeighbor.py
+        -----------------------------------------
+
+        b. for Logistic Regression:
+        -----------------------------------------
+        python LogisticRegression.py
+        -----------------------------------------
+
+        OR if you are using IPython console:
+        -----------------------------------------
+        run LogisticRegression.py
+        -----------------------------------------
+
+III. FILES:
+    1. dataloader.py: mat data loader, read matlab file into python
+    2. kNearestNeighbor.py: k-NN with main method to test
+    3. LogisticRegression.py: Logistic Regression with main method to test
+    4. PrincipalComponentAnalysis.py: implement of PCA approach
+    6. __init__.py: just ignore it please
+    8. datasets\*.mat: NEEDED DATABASES
+
+Because I am not good with Matlab so I choose Python for this project, sorry for this boring and trouble instruction.
+
+Rui Fu
+rfu@ust.hk

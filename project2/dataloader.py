@@ -33,15 +33,18 @@ class DataSetter:
 
 class Dataset:
     def __init__(self):
+        print 'Datasets init...'
         self.database = {'Ionosphere':['ionosphere_test.mat','ionosphere_train.mat'], 'ISOLET':['isolet_test.mat', 'isolet_train.mat'], 'Liver':['liver_test.mat', 'liver_train.mat'], 'MNIST':['mnist_test.mat', 'mnist_train.mat'], 'Mushroom':['mushroom_test.mat', 'mushroom_train.mat']}
         for dataset in self.database:
             for f in self.database[dataset]:
-                print('Checking %s database file %s' % (dataset, f))
+                print('     Checking %s database file %s' % (dataset, f))
                 target = '../datasets/'+f
                 origin = 'https://github.com/freeznet/machine_learning_project2/blob/master/datasets/' + f + '?raw=true'
                 if (not os.path.isfile(target)):
-                    print('Downloading %s %s data from online site.' % (dataset, f ))
+                    print('     Downloading %s %s data from online site.' % (dataset, f ))
                     urllib.urlretrieve(origin, target)
+        print 'All Datasets green...'
+        print
 
     def load(self, data, type):
         return DataLoader(self.database[data][type])

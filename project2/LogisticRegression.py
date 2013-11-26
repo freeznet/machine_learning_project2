@@ -1,14 +1,22 @@
 __author__ = 'Rui'
 
 #from scipy.optimize import fmin_bfgs, fmin_cg, fmin_ncg, fmin_l_bfgs_b, fmin
+import time
+
 from scipy import optimize as op
-import numpy as np
+
+if sys.platform == 'win32':
+    default_timer = time.clock
+else:
+    default_timer = time.time
+
+np.seterr(all='ignore')
 
 from dataloader import *
 from pylab import *
 
 def sigmoid(X):
-    den = 1.0 + e ** (-1.0 * X)
+    den = 1.0 + np.exp(-1.0 * X)
     d = 1.0 / den
     return d
 
@@ -17,13 +25,16 @@ class LogisticReg:
         self.set_data(xTrain, yTrain, xTest, yTest)
         self.theta = np.zeros(self.x_train.shape[1])
         self.J = None
-        self.grad = None
 
     def costFunction(self, theta):
         theta = reshape(theta, (len(theta),1))
-        self.J = (1.0 / self.n) * (-self.y_train.T.dot(log(sigmoid(self.x_train.dot(theta)))) - (1.0 - self.y_train).T.dot(log(1.0 - sigmoid(self.x_train.dot(theta)))))
-        self.grad = ((1.0 / self.n) * (sigmoid(self.x_train.dot(theta)).T - self.y_train).T.dot(self.x_train)).T
+
+        h = sigmoid(self.x_train.dot(theta))
+
+        self.J = (1.0 / self.n) * (-self.y_train.T.dot(np.log(h)) - (1.0 - self.y_train).T.dot(np.log(1.0 - h)))
+
         return self.J[0][0]
+
 
     def predict(self, X, theta):
         return (sigmoid(X.dot(c_[theta]))>=0.5)
@@ -33,8 +44,8 @@ class LogisticReg:
         theta, cost, _, _, _, =  op.fmin(lambda t: self.costFunction(t), self.theta, **options)
         return theta
 
-    def minimum_(self):
-        theta =  op.fmin_bfgs(self.costFunction, self.theta)
+    def minimum_auto(self):
+        theta =  op.fmin_bfgs(self.costFunction, self.theta, disp=False)
         return theta
 
     def set_data(self, x_train, y_train, x_test, y_test):
@@ -57,56 +68,36 @@ if __name__ == "__main__":
     dataset = Dataset()
 
     for one in dataset.database:
-        print one
+        print 'Current dataset:',one
+        initRuntime = default_timer()
+
+        currentTime = default_timer()
         data = dataset.load(one,0)
+        print '     Load Testing data done. (%0.3fs)'%(default_timer() - currentTime)
         XTrain = data.features
         YTrain = data.labels
 
+        currentTime = default_timer()
         data = dataset.load(one,1)
+        print '     Load Training data done. (%0.3fs)'%(default_timer() - currentTime)
         XTest = data.features
         YTest = data.labels
 
+        currentTime = default_timer()
         lr = LogisticReg(xTrain=XTrain, yTrain=YTrain, xTest=XTest, yTest=YTest)
 
         Jinit = lr.costFunction(lr.theta)
 
-        theta = lr.minimum_()
-        #print '\nCost at theta found by fmin: %g' % cost
-        #print '\nParameters theta:', theta
+        theta = lr.minimum_auto()
+        print '     Data training done. (%0.3fs)'%(default_timer() - currentTime)
 
         p_train = lr.training_reconstruction(theta)
         p_test = lr.test_predictions(theta)
 
-        print '\nAccuracy on training set: %g' % p_train
-        print 'Accuracy on test set: %g' % p_test
-
-        #print theta
-
-
-
-        #lr.winningrate()
-        #break
-
-
-
-    #print "Initial betas:"
-    #print lr.betas
-    #print "Initial likelihood:"
-    #print lr.lik(lr.betas)
-
-    #print "Final betas:"
-    #print lr.betas
-    #print "Final lik:"
-    #print lr.lik(lr.betas)
-
-    #subplot(1, 2, 0 + 1)
-    #lr.plot_training_reconstruction()
-    #subplot(1, 2, 0 + 2)
-    #lr.plot_test_predictions()
-
-
-
-    #show()
+        print '     Accuracy on training set: %g' % p_train
+        print '     Accuracy on test set: %g' % p_test
+        print '     Total runtime: %0.3fs'%(default_timer() - initRuntime)
+        print
 
 
 
