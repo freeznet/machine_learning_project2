@@ -8,7 +8,7 @@ I. NEEDED TOOLS:
     P.S2: If you dont have matplotlib installed, program will get error message in plotting stage, but you still can see all TEXT output results.
 
 II. HOW TO RUN:
-    There are two executable python scripts, which are kNearestNeighbor.py , LogisticRegression.py and Plot.py
+    There are three executable python scripts, which are kNearestNeighbor.py , LogisticRegression.py and Plot.py
 
     1. Before run
         a. setup the needed tools
@@ -56,7 +56,3 @@ III. FILES:
     7. project2\*.sav: data collected for plotting
     8. datasets\*.mat: NEEDED DATABASES
 
-Because I am not good with Matlab so I choose Python for this project, sorry for this boring and trouble instruction.
-
-Rui Fu
-rfu@ust.hk
