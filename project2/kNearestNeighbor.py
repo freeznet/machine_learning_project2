@@ -96,15 +96,15 @@ if __name__ == "__main__":
         data = dataset.load(one,0)
         print '     Load Testing data done. (%0.3fs)'%(default_timer() - currentTime)
         result['t_load_test'] = default_timer() - currentTime
-        XTrain = data.features
-        YTrain = data.labels
+        XTest = data.features
+        YTest = data.labels
 
         currentTime = default_timer()
         data = dataset.load(one,1)
         print '     Load Training data done. (%0.3fs)'%(default_timer() - currentTime)
         result['t_load_train'] = default_timer() - currentTime
-        XTest = data.features
-        YTest = data.labels
+        XTrain = data.features
+        YTrain = data.labels
 
         currentTime = default_timer()
 
@@ -120,15 +120,22 @@ if __name__ == "__main__":
                 trainResult = knn.analysis(trainPredict, randomTestY)
                 kset[k] = kset.get(k, 0.0) + trainResult
             kset[k] = kset.get(k, 0.0) / 10.0 # -> get even value
-            if kset.get(k, 0.0) >= 100.0:   # reach maximum, no need anymore testing
+            if kset.get(k, 0.0) >= 100.0:   # reach maximum, no need anymore cross-validation
                 break
         selectK = max(kset.iteritems(), key=operator.itemgetter(1))[0]
+        result['t_select_k'] = default_timer() - currentTime
         print '     Get best k: %d with accuracy %f. (%0.3fs)'%(selectK, kset[selectK], default_timer() - currentTime)
         result['select_k'] = selectK
 
         currentTime = default_timer()
         testPredict = knn.predict(XTest, XTrain, YTrain, selectK)
+        result['t_test'] = default_timer() - currentTime
+        print '     Test data predict done. (%0.3fs)'%(default_timer() - currentTime)
+
+        currentTime = default_timer()
         TrainPredict = knn.predict(XTrain, XTrain, YTrain, selectK)
+        result['t_train'] = default_timer() - currentTime
+        print '     Train data predict done. (%0.3fs)'%(default_timer() - currentTime)
 
         p_train = knn.training_reconstruction(TrainPredict)
         p_test = knn.test_predictions(testPredict)
@@ -144,13 +151,21 @@ if __name__ == "__main__":
         pca = PCA(XTrain) # using training data set
         bestPCA = pca.dim
         result['select_dim'] = bestPCA
+        result['t_select_dim'] = default_timer() - currentTime
         print '     Dim reduce from %d to %d.(%0.3fs)'%(XTrain.shape[1], bestPCA, default_timer() - currentTime)
         XDimReducedTrain = pca.currentFeature
         XDimReducedTest = pca.DimReduce(XTest, bestPCA)
         currentTime = default_timer()
 
+        currentTime = default_timer()
         testPCAPredict = knn.predict(XDimReducedTest, XDimReducedTrain, YTrain, selectK)
+        result['t_pca_test'] = default_timer() - currentTime
+        print '     Test data predict done. (%0.3fs)'%(default_timer() - currentTime)
+
+        currentTime = default_timer()
         TrainPCAPredict = knn.predict(XDimReducedTrain, XDimReducedTrain, YTrain, selectK)
+        result['t_pca_train'] = default_timer() - currentTime
+        print '     Train data predict done. (%0.3fs)'%(default_timer() - currentTime)
 
         p_train = knn.training_reconstruction(TrainPCAPredict)
         p_test = knn.test_predictions(testPCAPredict)

@@ -80,15 +80,15 @@ if __name__ == "__main__":
         data = dataset.load(one,0)
         print '     Load Testing data done. (%0.3fs)'%(default_timer() - currentTime)
         result['t_load_test'] = default_timer() - currentTime
-        XTrain = data.features
-        YTrain = data.labels
+        XTest = data.features
+        YTest = data.labels
 
         currentTime = default_timer()
         data = dataset.load(one,1)
         print '     Load Training data done. (%0.3fs)'%(default_timer() - currentTime)
         result['t_load_train'] = default_timer() - currentTime
-        XTest = data.features
-        YTest = data.labels
+        XTrain = data.features
+        YTrain = data.labels
 
         currentTime = default_timer()
         lr = LogisticReg(xTrain=XTrain, yTrain=YTrain, xTest=XTest, yTest=YTest)
@@ -96,11 +96,18 @@ if __name__ == "__main__":
         Jinit = lr.costFunction(lr.theta)
 
         theta = lr.minimum_auto()
-
-        p_train = lr.training_reconstruction(theta)
-        p_test = lr.test_predictions(theta)
         result['t_preform_train'] = default_timer() - currentTime
         print '     Data training done. (%0.3fs)'%(default_timer() - currentTime)
+
+        currentTime = default_timer()
+        p_train = lr.training_reconstruction(theta)
+        result['t_train'] = default_timer() - currentTime
+        print '     Train data predict done. (%0.3fs)'%(default_timer() - currentTime)
+
+        currentTime = default_timer()
+        p_test = lr.test_predictions(theta)
+        result['t_test'] = default_timer() - currentTime
+        print '     Test data predict done. (%0.3fs)'%(default_timer() - currentTime)
 
         print '     Accuracy on training set: %g' % p_train
         print '     Accuracy on test set: %g' % p_test

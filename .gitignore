@@ -6,3 +6,15 @@
 *.iml
 
 *.pyc
+
+*.log
+
+*.sav
+
+project2/LogisticRegression.sav
+
+*.png
+
+*.pdf
+
+*.zip
